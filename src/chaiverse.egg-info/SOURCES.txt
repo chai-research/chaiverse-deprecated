@@ -1,0 +1,7 @@
+README.md
+setup.py
+src/chaiverse.egg-info/PKG-INFO
+src/chaiverse.egg-info/SOURCES.txt
+src/chaiverse.egg-info/dependency_links.txt
+src/chaiverse.egg-info/requires.txt
+src/chaiverse.egg-info/top_level.txt
