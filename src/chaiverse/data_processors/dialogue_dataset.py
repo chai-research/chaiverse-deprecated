@@ -117,7 +117,6 @@ class ChatMLDataset:
             self.processor = InputOutputProcessor(
                 tokenizer, sequence_len, self.output_format
             )
-
         self.raw_datasets = get_raw_dataset(
             dataset_name,
             val_set_size,

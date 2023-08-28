@@ -28,7 +28,7 @@ from axolotl.utils.tokenization import check_dataset_labels
 from axolotl.utils.trainer import setup_trainer, calculate_total_num_steps
 from axolotl.utils.wandb import setup_wandb_env_vars
 
-from chaiverse.process_data.dialogue_dataset import prepare_chatml_dataset
+from chaiverse.data_processors.dialogue_dataset import prepare_chatml_dataset
 from datasets import concatenate_datasets
 
 configure_logging()
@@ -243,6 +243,7 @@ def train(
         if cfg.flash_optimum:
             model = BetterTransformer.reverse(model)
         model.save_pretrained(cfg.output_dir, safe_serialization=safe_serialization)
+    return model
 
 
 if __name__ == "__main__":

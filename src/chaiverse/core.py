@@ -31,7 +31,7 @@ class ChaiLLM():
         self._save_yaml_file(
             base_model=self.model_url,
             base_model_config=self.tokenizer_url,
-            dataset=[{'path': dataset.repo_url, 'type': dataset.data_type}],
+            datasets=[{'path': dataset.repo_url, 'type': dataset.data_type}],
             dataset_prepared_path='last_run_prepared',
             val_set_size=val_set_size,
             output_dir=self.output_dir,
@@ -63,7 +63,7 @@ class ChaiLLM():
 
     def _set_output_dir(self, output_dir):
         cv.utils.ensure_dir_exists(output_dir)
-        self._output_dir = output_dir
+        self._output_dir = os.path.abspath(output_dir)
 
     def _set_config_file_path(self, path):
         self._config_file_path = path

@@ -19,6 +19,7 @@ setup(
     long_description=long_description,
     license='MIT',
     package_dir={"": "src"},
+    packages=find_packages(where="src"),
     long_description_content_type='text/markdown',
 )
 
