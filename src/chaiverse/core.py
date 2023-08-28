@@ -2,13 +2,6 @@ import yaml
 import os
 
 import chaiverse as cv
-from datasets import load_dataset as load_hf_dataset
-
-
-def load_dataset(repo_url):
-    dataset = load_hf_dataset(repo_url)
-    dataset.repo_url = repo_url
-    return dataset
 
 
 class ChaiLLM():

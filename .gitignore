@@ -1,2 +1,3 @@
 build
-chaiverse/chaiverse.egg-info
+src/chaiverse.egg-info
+__pycache__
