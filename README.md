@@ -15,7 +15,7 @@ import chaiverse as cv
 dataset = cv.load_dataset('ChaiML/davinci_150_examples', 'chatml')
 
 model = cv.LLaMA7b()
-model.fit(dataset, 'dummy_run', num_epochs=1)
+model.fit(dataset, output_dir='./my_first_llama', num_epochs=1)
 
 model_url = 'ChaiML/llama7b_dummy'
 model.push_to_hub(model_url, private=True)
