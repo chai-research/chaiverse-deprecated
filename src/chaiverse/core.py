@@ -1,5 +1,6 @@
 import yaml
 import os
+from pathlib import Path
 
 import chaiverse as cv
 
@@ -7,6 +8,7 @@ import chaiverse as cv
 class ChaiLLM():
     def __init__(self):
         self._output_dir = None
+        self._config_file_path = None
 
     def fit(
             self,
@@ -29,7 +31,7 @@ class ChaiLLM():
         self._save_yaml_file(
             base_model=self.model_url,
             base_model_config=self.tokenizer_url,
-            dataset=dataset.repo_url,
+            dataset=[{'path': dataset.repo_url, 'type': dataset.data_type}],
             dataset_prepared_path='last_run_prepared',
             val_set_size=val_set_size,
             output_dir=self.output_dir,
@@ -46,6 +48,7 @@ class ChaiLLM():
             flash_attention=self.use_flash_attention,
             eval_steps=eval_steps
         )
+        launch_training(self.config_file_path)
 
     def push_to_hub(self, model_url, private):
         pass
@@ -54,13 +57,22 @@ class ChaiLLM():
     def output_dir(self):
         return self._output_dir
 
+    @property
+    def config_file_path(self):
+        return self._config_file_path
+
     def _set_output_dir(self, output_dir):
         cv.utils.ensure_dir_exists(output_dir)
         self._output_dir = output_dir
+
+    def _set_config_file_path(self, path):
+        self._config_file_path = path
     
     def _save_yaml_file(self, **configs):
-        with open(os.path.join(self.output_dir, 'trainer_config.yaml'), 'w') as f:
+        path = os.path.join(self.output_dir, 'trainer_config.yaml')
+        with open(path, 'w') as f:
             yaml.dump(configs, f)
+        self._set_config_file_path(path)
 
 
 class LLaMA7b(ChaiLLM):
@@ -75,3 +87,11 @@ class LLaMA7b(ChaiLLM):
     @property
     def use_flash_attention(sefl):
         return True
+
+
+def launch_training(config_path):
+    import subprocess
+    root_dir = Path(os.path.dirname(cv.__file__))
+    execution_path = root_dir / "trainer.py"
+    command = f"accelerate launch {execution_path} {config_path}"
+    subprocess.check_output(command, shell=True)

@@ -12,7 +12,9 @@ def ensure_dir_exists(path):
         os.makedirs(directory)
 
 
-def load_dataset(repo_url):
+def load_dataset(repo_url, data_type):
+    assert data_type in {'chatml', 'input_output'}, 'Unsupported dataset format'
     dataset = load_hf_dataset(repo_url)
     dataset.repo_url = repo_url
+    dataset.data_type = data_type
     return dataset
