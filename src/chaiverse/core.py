@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 import chaiverse as cv
+from axolotl.utils.models import load_model, load_tokenizer
 
 
 class ChaiLLM():
@@ -17,6 +18,8 @@ class ChaiLLM():
             num_epochs=1,
             eval_steps=200,
             learning_rate=2e-5,
+            wandb_project=None,
+            wandb_entity=None,
             sequence_len=1024,
             logging_steps=1,
             val_set_size=0.01,
@@ -24,8 +27,6 @@ class ChaiLLM():
             micro_batch_size=4,
             bf16=True,
             gradient_checkpointing=True,
-            wandb_project=None,
-            wandb_entity=None,
             ):
         self._set_output_dir(output_dir)
         self._save_yaml_file(
@@ -48,10 +49,13 @@ class ChaiLLM():
             flash_attention=self.use_flash_attention,
             eval_steps=eval_steps
         )
-        launch_training(self.config_file_path)
+        model, tokenizer = cv.trainer.train(self.config_file_path)
+        self.model = model
+        self.tokenizer = tokenizer
 
     def push_to_hub(self, model_url, private):
-        pass
+        self.model.push_to_hub(model_url, private)
+        self.tokenizer.push_to_hub(model_url, private)
 
     @property
     def output_dir(self):
@@ -89,6 +93,7 @@ class LLaMA7b(ChaiLLM):
         return True
 
 
+# NO IDEA why this throws error, bypassing accelerate for now as its command line anyway...
 def launch_training(config_path):
     import subprocess
     root_dir = Path(os.path.dirname(cv.__file__))

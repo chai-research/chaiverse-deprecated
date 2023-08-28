@@ -243,7 +243,7 @@ def train(
         if cfg.flash_optimum:
             model = BetterTransformer.reverse(model)
         model.save_pretrained(cfg.output_dir, safe_serialization=safe_serialization)
-    return model
+    return model, tokenizer
 
 
 if __name__ == "__main__":
