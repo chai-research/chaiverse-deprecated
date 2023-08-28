@@ -43,7 +43,7 @@ class ChaiLLM():
             bf16=bf16,
             gradient_checkpointing=gradient_checkpointing,
             logging_steps=logging_steps,
-            flash_attention=flash_attention,
+            flash_attention=self.use_flash_attention,
             eval_steps=eval_steps
         )
 
@@ -59,7 +59,7 @@ class ChaiLLM():
         self._output_dir = output_dir
     
     def _save_yaml_file(self, **configs):
-        with open(os.path.join(self.output_dir, 'trainer_config.yaml', 'w')) as f:
+        with open(os.path.join(self.output_dir, 'trainer_config.yaml'), 'w') as f:
             yaml.dump(configs, f)
 
 

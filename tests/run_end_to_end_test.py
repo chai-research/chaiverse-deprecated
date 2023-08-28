@@ -3,17 +3,15 @@ End to end test:
     1. fit a llama 7b model
     2. submit it to chai guanaco
 """
-from datasets import load_dataset
-
 import chaiverse as cv
 import chai_guanaco as cg
 
 
 def run_llama_7b_model_fitter_end_to_end():
     model = cv.LLaMA7b()
-    dataset = load_dataset('ChaiML/davinci_1k_samples')
+    dataset = cv.load_dataset('ChaiML/soda_10k_samples')
 
-    model.fit(dataset, num_epochs=2)
+    model.fit(dataset, 'dummy_run', num_epochs=2)
     model_url = 'ChaiML/llama7b_dummy'
     model.push_to_hub(model_url, private=True)
     submit_model(model_url)
