@@ -7,6 +7,9 @@
 ## A Collaboration Between
 [![Collaboration Banner](https://imgur.com/8oJSWan.png)](https://github.com/OpenAccess-AI-Collective/axolotl)
 
+## Jupyter Quick Start + RunPod
+
+Just run the Quickstart jupyter notebook, everything you need will be there 🚀
 
 ## Quick Start
 
