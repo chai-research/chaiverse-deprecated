@@ -29,7 +29,7 @@ def submit_model(model_url):
         }
     submission_parameters = {'model_repo': model_url, 'generation_params': generation_params, 'model_name': 'axolotl-llama2-7b'}
     submitter = cg.ModelSubmitter()
-    submitter.submit()
+    submitter.submit(submission_parameters)
 
 
 if __name__ == '__main__':
