@@ -2,3 +2,5 @@ build
 src/chaiverse.egg-info
 __pycache__
 tests/dummy_run
+
+**/*.ipynb_checkpoints/
