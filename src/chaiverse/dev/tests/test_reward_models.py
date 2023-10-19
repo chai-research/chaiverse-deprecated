@@ -41,7 +41,6 @@ def data(tokenize_loader):
                 shuffle=True,
                 )
     df = data_loader.load()
-    df = df.cast(Features({'input_text': Value("string"), "labels": Value("float32")}))
     data_builder = RewardDatasetBuilder(
             tokenize_loader=tokenize_loader,
             block_size=1024,
@@ -111,3 +110,20 @@ def test_save_pretrained_reward(tiny_model):
         # check that the files `pytorch_model.bin` and `config.json` are in the directory
         assert os.path.isfile(f"{tmp_dir}/pytorch_model.bin"), f"{tmp_dir}/pytorch_model.bin does not exist"
         assert os.path.exists(f"{tmp_dir}/config.json"), f"{tmp_dir}/config.json does not exist"
+
+def test_reward_trainer(gpt2_model,data):
+    gpt2_model.instantiate_reward_trainer(data)
+    previous_trainable_params = {n: param.clone() for n, param in gpt2_model.trainer.model.named_parameters()}
+
+    gpt2_model.fit(data)
+
+    assert gpt2_model.trainer.state.log_history[-1]['train_loss'] is not None
+
+    # check the params have changed
+    for n, param in previous_trainable_params.items():
+        new_param = gpt2_model.trainer.model.get_parameter(n)
+        # check the params have changed - ignore 0 biases
+        if param.sum() != 0:
+            assert not torch.equal(param, new_param)
+    preds = gpt2_model.trainer.predict(data['train'])
+    assert preds.predictions.shape == (len(data['train']),2)
