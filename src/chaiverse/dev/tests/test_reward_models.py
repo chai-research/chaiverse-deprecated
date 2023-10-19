@@ -50,7 +50,7 @@ def data(tokenize_loader):
 
 @pytest.fixture
 def tiny_model(tiny_base_model_id,tokenize_loader):
-    tiny_model = RewardClassificationTrainer(
+    model = RewardClassificationTrainer(
             model_name=tiny_base_model_id,
             tokenize_loader=tokenize_loader,
             device_map = "cpu",
@@ -61,8 +61,26 @@ def tiny_model(tiny_base_model_id,tokenize_loader):
             eval_strategy='steps',
             eval_steps=50,
             )
-    tiny_model.instantiate_reward_model()
-    return tiny_model
+    model.tokenizer = model.tokenize_loader.load()
+    model.instantiate_reward_model()
+    return model
+
+@pytest.fixture
+def gpt2_model(tokenize_loader):
+    model = RewardClassificationTrainer(
+            model_name="gpt2",
+            tokenize_loader=tokenize_loader,
+            device_map = "cpu",
+            output_dir='test_reward_model',
+            learning_rate=1e-5,
+            num_train_epochs=1,
+            bf16=False,
+            eval_strategy='steps',
+            eval_steps=50,
+            )
+    model.tokenizer = model.tokenize_loader.load()
+    model.instantiate_reward_model()
+    return model
 
 def test_load_base_model(tiny_base_model):
     assert tiny_base_model is not None
