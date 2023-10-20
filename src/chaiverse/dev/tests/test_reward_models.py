@@ -20,7 +20,7 @@ def tiny_base_model_id():
 def tiny_base_model(tiny_base_model_id):
     return AutoModelForSequenceClassification.from_pretrained(
                 tiny_base_model_id,
-                num_labels=1,
+                num_labels=2,
                 device_map='cpu',
                 )
 
@@ -33,10 +33,9 @@ def tokenize_loader():
 
 @pytest.fixture
 def data(tokenize_loader):
-    data_path = 'ChaiML/20231012_chai_prize_reward_model_data'
+    data_path = 'ebony59/20231012_chai_prize_reward_model_tiny_random_data'
     data_loader = DatasetLoader(
                 hf_path=data_path,
-                data_samples=10,
                 validation_split_size=0.1,
                 shuffle=True,
                 )
