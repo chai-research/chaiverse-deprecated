@@ -42,7 +42,7 @@ def data(tokenize_loader):
     df = data_loader.load()
     data_builder = RewardDatasetBuilder(
             tokenize_loader=tokenize_loader,
-            block_size=1024,
+            block_size=32,
             )
     return data_builder.generate(df, n_jobs=10)
 
