@@ -48,7 +48,7 @@ def tiny_model(tiny_base_model_id):
             output_dir = 'lora_unittest',
             device_map = 'cpu'
             )
-    tiny_model.instantiate_lora_model(load_in_8bit=False)
+    tiny_model.instantiate_lora_model()
     return tiny_model
 
 @pytest.fixture

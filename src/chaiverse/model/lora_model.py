@@ -1,3 +1,5 @@
+import torch
+
 from peft import LoraConfig, get_peft_model, prepare_model_for_int8_training, TaskType
 from transformers import AutoModelForCausalLM
 from transformers import TrainingArguments, Trainer
@@ -29,6 +31,7 @@ class LoraTrainer:
         self.logging_strategy = logging_strategy
         self.logging_steps = logging_steps
         self.device_map = device_map
+        self.load_in_8bit = self._check_cuda_availability()
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
         self.lora_target_modules = lora_target_modules
@@ -36,9 +39,11 @@ class LoraTrainer:
         self.lora_bias = lora_bias
         self.lora_task_type = lora_task_type
 
-    def fit(self, data):
+    def trainer_setup(self, data):
         self.instantiate_lora_model()
         self.instantiate_lora_trainer(data)
+
+    def fit(self):
         self.trainer.train()
 
     def save(self, path=None):
@@ -47,15 +52,15 @@ class LoraTrainer:
 
     def merge(self, path=None):
         save_path = path or self.output_dir
-        base_model = self._load_base_model(load_in_8bit=False)
+        base_model = self._load_base_model()
         model_to_merge = self.model.from_pretrained(base_model, save_path)
         self.model = model_to_merge.merge_and_unload()
 
     def push_to_hub(self, hf_path, private=True):
         self.model.push_to_hub(hf_path, private=private)
 
-    def instantiate_lora_model(self, load_in_8bit=True, **kwargs):
-        model = self._load_base_model(load_in_8bit=load_in_8bit)
+    def instantiate_lora_model(self, **kwargs):
+        model = self._load_base_model()
         model = prepare_model_for_int8_training(model)
         self.model = self._load_lora_model(model)
         self.model.print_trainable_parameters()
@@ -67,10 +72,16 @@ class LoraTrainer:
             data_collator=default_data_collator,
             train_dataset=data['train'])
 
-    def _load_base_model(self, load_in_8bit=True):
+    def _check_cuda_availability(self):
+        if self.device_map == 'cpu' or (not torch.cuda.is_available()):
+            return False
+        else:
+            return True
+
+    def _load_base_model(self):
         model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
-                load_in_8bit=load_in_8bit,
+                load_in_8bit=self.load_in_8bit,
                 device_map=self.device_map)
         return model
 
