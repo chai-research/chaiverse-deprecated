@@ -125,7 +125,7 @@ def test_reward_trainer(gpt2_model, data):
     gpt2_model.instantiate_reward_trainer(data)
     previous_trainable_params = {n: param.clone() for n, param in gpt2_model.trainer.model.named_parameters()}
 
-    gpt2_model.fit(data)
+    gpt2_model.fit()
 
     assert gpt2_model.trainer.state.log_history[-1]['train_loss'] is not None
 

@@ -2,11 +2,14 @@ from abc import ABCMeta, abstractmethod
 
 from transformers import AutoModelForSequenceClassification
 from transformers import TrainingArguments, Trainer
+from peft import get_peft_model, prepare_model_for_int8_training
+
 import numpy as np
+import torch
 
 from chaiverse import utils
+from chaiverse.training_config import RewardLoraConfig
 from chaiverse.logging_utils import logging_manager
-
 
 class BaseRewardTrainer(metaclass=ABCMeta):
     _trainer_cls = Trainer
@@ -35,6 +38,10 @@ class BaseRewardTrainer(metaclass=ABCMeta):
             train_seed=1,
             device_map='auto',
             no_cuda=False,
+            use_lora=True,
+            lora_params = {
+                'lora_dropout':0.05,
+                },
     ):
         self.model_name = model_name
         self.tokenizer_loader = tokenizer_loader
@@ -56,12 +63,16 @@ class BaseRewardTrainer(metaclass=ABCMeta):
         self.train_seed = train_seed
         self.device_map = device_map
         self.no_cuda = no_cuda
+        self.use_lora = use_lora
+        self.lora_params = lora_params
 
-    def fit(self, data):
+    def trainer_setup(self,data):
         data = self._format_data_by_training_task(data)
         self.tokenizer = self.tokenizer_loader.load()
         self.instantiate_reward_model()
         self.instantiate_reward_trainer(data)
+
+    def fit(self):
         self.trainer.train()
 
     def save(self, path=None):
@@ -80,6 +91,11 @@ class BaseRewardTrainer(metaclass=ABCMeta):
                 device_map=self.device_map,
                 )
         self.model.config.pad_token_id = self.tokenizer.pad_token_id
+        if self.use_lora:
+            self.lora_config = RewardLoraConfig(**self.lora_params)
+            self.model = prepare_model_for_int8_training(self.model)
+            self.model = get_peft_model(self.model,self.lora_config)
+        self.model.print_trainable_parameters()
 
     def instantiate_reward_trainer(self, data):
         eval_dataset = data.get('validation', None)
@@ -97,6 +113,9 @@ class BaseRewardTrainer(metaclass=ABCMeta):
 
     @property
     def training_config(self):
+        if self.bf16 and (not torch.cuda.is_available()):
+            self.bf16 = False
+            print("no GPU detected, set bf16 to False")
         return TrainingArguments(
                 output_dir=self.output_dir,
                 learning_rate=self.learning_rate,
