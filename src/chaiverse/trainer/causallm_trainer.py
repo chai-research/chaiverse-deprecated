@@ -6,56 +6,41 @@ from transformers import TrainingArguments, Trainer
 from transformers import default_data_collator
 
 from chaiverse.model.training_config import CausalLMLoraConfig
+from chaiverse.model.lora_model import LoraModel
 
-class LoraModel:
-    def __init__(
-            self,
-            base_model,
-            lora_config,
-            output_dir,
-    ):
-        self.base_model = base_model
-        self.lora_config = lora_config
-        self.output_dir = output_dir
-        self.model = self._load_lora_model()
 
-    def merge(self, path=None):
-        save_path = path or self.output_dir
-        model_to_merge = self.model.from_pretrained(self.base_model, save_path)
-        return model_to_merge.merge_and_unload()
-
-    def _load_lora_model(self):
-        self.model = prepare_model_for_int8_training(self.base_model)
-        return get_peft_model(self.model, self.lora_config)
-
-class LoraTrainer:
+class CausalLMTrainer:
 
     def __init__(
             self,
             model_name,
             output_dir,
+            data_collator = default_data_collator,
             learning_rate=2e-5,
             num_train_epochs=2,
             logging_strategy='steps',
             logging_steps=50,
             device_map='auto',
+            use_lora=True,
             lora_params = {
                 'lora_dropout':0.05,
                 },
     ):
         self.model_name = model_name
         self.output_dir = output_dir
+        self.data_collator = data_collator
         self.learning_rate = learning_rate
         self.num_train_epochs = num_train_epochs
         self.logging_strategy = logging_strategy
         self.logging_steps = logging_steps
         self.device_map = device_map
         self.load_in_8bit = self._check_cuda_availability()
+        self.use_lora = use_lora
         self.lora_params = lora_params
 
     def trainer_setup(self, data):
-        self.instantiate_lora_model()
-        self.instantiate_lora_trainer(data)
+        self.instantiate_causallm_model()
+        self.instantiate_causallm_trainer(data)
 
     def fit(self):
         self.trainer.train()
@@ -70,22 +55,23 @@ class LoraTrainer:
     def push_to_hub(self, hf_path, private=True):
         self.model.push_to_hub(hf_path, private=private)
 
-    def instantiate_lora_model(self, **kwargs):
+    def instantiate_causallm_model(self, **kwargs):
         model = self._load_base_model()
-        self.lora_config = CausalLMLoraConfig(**self.lora_params)
-        self.lora_model = LoraModel(
-            base_model=model,
-            lora_config=self.lora_config,
-            output_dir = self.output_dir,
-            )
-        self.model = self.lora_model.model
-        self.model.print_trainable_parameters()
+        if self.use_lora:
+            self.lora_config = CausalLMLoraConfig(**self.lora_params)
+            self.lora_model = LoraModel(
+                base_model=model,
+                lora_config=self.lora_config,
+                output_dir = self.output_dir,
+                )
+            self.model = self.lora_model.model
+            self.model.print_trainable_parameters()
 
-    def instantiate_lora_trainer(self, data):
+    def instantiate_causallm_trainer(self, data):
         self.trainer = Trainer(
             model=self.model,
             args=self.training_config,
-            data_collator=default_data_collator,
+            data_collator=self.data_collator,
             train_dataset=data['train'])
 
     def _check_cuda_availability(self):
