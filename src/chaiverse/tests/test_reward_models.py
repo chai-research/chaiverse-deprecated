@@ -62,6 +62,7 @@ def tiny_model(tiny_base_model_id, tokenizer_loader, tmp_path):
             num_train_epochs=1,
             bf16=False,
             no_cuda=True,
+            use_lora=False,
             )
     model.tokenizer = model.tokenizer_loader.load()
     model.instantiate_reward_model()
@@ -71,6 +72,25 @@ def tiny_model(tiny_base_model_id, tokenizer_loader, tmp_path):
 @pytest.fixture
 @patch("chaiverse.logging_utils.requests.post", Mock())
 def gpt2_model(tokenizer_loader, tmp_path):
+    model = RewardClassificationTrainer(
+            model_name="gpt2",
+            tokenizer_loader=tokenizer_loader,
+            device_map="cpu",
+            output_dir=f'{tmp_path}/test_reward_model',
+            learning_rate=1e-5,
+            num_train_epochs=1,
+            bf16=False,
+            no_cuda=True,
+            use_lora=False,
+            )
+    model.tokenizer = model.tokenizer_loader.load()
+    model.instantiate_reward_model()
+    return model
+
+
+@pytest.fixture
+@patch("chaiverse.logging_utils.requests.post", Mock())
+def lora_gpt2_model(tokenizer_loader, tmp_path):
     model = RewardClassificationTrainer(
             model_name="gpt2",
             tokenizer_loader=tokenizer_loader,
@@ -123,6 +143,7 @@ def test_save_pretrained_reward(tiny_model):
 
 def test_reward_trainer(gpt2_model, data):
     gpt2_model.instantiate_reward_trainer(data)
+
     previous_trainable_params = {n: param.clone() for n, param in gpt2_model.trainer.model.named_parameters()}
 
     gpt2_model.fit()
@@ -134,6 +155,56 @@ def test_reward_trainer(gpt2_model, data):
         new_param = gpt2_model.trainer.model.get_parameter(n)
         # check the params have changed - ignore 0 biases
         if param.sum() != 0:
-            assert not torch.equal(param, new_param)
+            assert not torch.allclose(param, new_param, atol=1e-12, rtol=1e-12)
     preds = gpt2_model.trainer.predict(data['train'])
     assert preds.predictions.shape == (len(data['train']), 2)
+
+
+def test_lora_reward_trainer(lora_gpt2_model, data):
+    lora_gpt2_model.instantiate_reward_trainer(data)
+
+    previous_trainable_params = {}
+    previous_non_trainable_params = {}
+
+    trainable_params_name = ["lora", "modules_to_save"]
+
+    for n, param in lora_gpt2_model.model.named_parameters():
+        if any([t in n for t in trainable_params_name]):
+            previous_trainable_params[n] = param.clone()
+        else:
+            previous_non_trainable_params[n] = param.clone()
+
+    lora_gpt2_model.fit()
+
+    assert lora_gpt2_model.trainer.state.log_history[-1]["train_loss"] is not None
+
+    new_params = {}
+    for n, param in lora_gpt2_model.model.named_parameters():
+        new_params[n] = param.clone()
+
+    # check the trainable params have changed
+    for n, param in previous_trainable_params.items():
+        if n in new_params.keys() and param.sum() != 0:
+            new_param = new_params[n]
+            assert not torch.allclose(param, new_param, atol=1e-12, rtol=1e-12)
+
+    # check the non trainable params have not changed
+    for n, param in previous_non_trainable_params.items():
+        if n in new_params.keys() and param.sum() != 0:
+            new_param = new_params[n]
+            assert torch.allclose(param, new_param, atol=1e-12, rtol=1e-12)
+
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        lora_gpt2_model.save(path=tmp_dir)
+
+        # check that the files `adapter_model.bin` and `adapter_config.json` are in the directory
+        assert os.path.isfile(f"{tmp_dir}/adapter_model.bin"), f"{tmp_dir}/adapter_model.bin does not exist, it has {os.listdir(tmp_dir)}"
+        assert os.path.exists(f"{tmp_dir}/adapter_config.json"), f"{tmp_dir}/adapter_config.json does not exist, it has {os.listdir(tmp_dir)}"
+
+        lora_gpt2_model.merge(path=tmp_dir)
+        lora_gpt2_model.model.save_pretrained(tmp_dir+'/merged')
+
+        # check that the files `adapter_config.json`, 'model.safetensors' are in the directory
+        assert os.path.exists(f"{tmp_dir}/merged/config.json"), f"{tmp_dir}/merged/config.json does not exist, it has {os.listdir(tmp_dir+'/merged')}"
+        assert os.path.exists(f"{tmp_dir}/merged/model.safetensors"), f"{tmp_dir}/merged/pytorch.safetensors does not exist, it has {os.listdir(tmp_dir+'/merged')}"

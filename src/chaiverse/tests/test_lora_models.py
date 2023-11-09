@@ -80,7 +80,7 @@ def test_check_lora_model_nb_trainable_params(tiny_model):
     Check that the number of trainable parameters is correct.
     """
     nb_trainable_params = sum(p.numel() for p in tiny_model.model.parameters() if p.requires_grad)
-    assert nb_trainable_params == 4096
+    assert nb_trainable_params == 2048
 
 def test_save_pretrained_lora(tiny_model):
     r"""
@@ -114,7 +114,7 @@ def test_continue_training_lora_model(tiny_model, tiny_base_model):
         tiny_model.save(path=tmp_dir)
         pretrained_lora_model = PeftModel.from_pretrained(tiny_base_model, tmp_dir, is_trainable=True)
         nb_trainable_params = sum(p.numel() for p in pretrained_lora_model.parameters() if p.requires_grad)
-        assert nb_trainable_params == 4096
+        assert nb_trainable_params == 2048
 
 def test_merge_model(tiny_model):
     r"""

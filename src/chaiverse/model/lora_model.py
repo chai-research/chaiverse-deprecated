@@ -10,15 +10,23 @@ from chaiverse.training_config import CausalLMLoraConfig
 class LoraModel:
     def __init__(
             self,
-            model,
+            base_model,
             lora_config,
+            output_dir,
     ):
+        self.base_model = base_model
         self.lora_config = lora_config
-        self.model = self._load_lora_model(model)
+        self.output_dir = output_dir
+        self.model = self._load_lora_model()
 
-    def _load_lora_model(self,model):
-        self.model = prepare_model_for_int8_training(model)
-        return get_peft_model(model, self.lora_config)
+    def merge(self, path=None):
+        save_path = path or self.output_dir
+        model_to_merge = self.model.from_pretrained(self.base_model, save_path)
+        return model_to_merge.merge_and_unload()
+
+    def _load_lora_model(self):
+        self.model = prepare_model_for_int8_training(self.base_model)
+        return get_peft_model(self.model, self.lora_config)
 
 class LoraTrainer:
 
@@ -57,10 +65,7 @@ class LoraTrainer:
         self.model.save_pretrained(save_path)
 
     def merge(self, path=None):
-        save_path = path or self.output_dir
-        base_model = self._load_base_model()
-        model_to_merge = self.model.from_pretrained(base_model, save_path)
-        self.model = model_to_merge.merge_and_unload()
+        self.model = self.lora_model.merge(path=path)
 
     def push_to_hub(self, hf_path, private=True):
         self.model.push_to_hub(hf_path, private=private)
@@ -68,7 +73,12 @@ class LoraTrainer:
     def instantiate_lora_model(self, **kwargs):
         model = self._load_base_model()
         self.lora_config = CausalLMLoraConfig(**self.lora_params)
-        self.model = LoraModel(model=model,lora_config=self.lora_config).model
+        self.lora_model = LoraModel(
+            base_model=model,
+            lora_config=self.lora_config,
+            output_dir = self.output_dir,
+            )
+        self.model = self.lora_model.model
         self.model.print_trainable_parameters()
 
     def instantiate_lora_trainer(self, data):

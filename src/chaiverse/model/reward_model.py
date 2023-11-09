@@ -80,6 +80,12 @@ class BaseRewardTrainer(metaclass=ABCMeta):
         save_path = path or self.output_dir
         self.model.save_pretrained(save_path)
 
+    def merge(self, path=None):
+        if not self.use_lora:
+            print("Not using lora, can't merge")
+        else:
+            self.model = self.lora_model.merge(path=path)
+
     def push_to_hub(self, hf_path, private=True):
         self.model.push_to_hub(hf_path, private=private)
         self.tokenizer.push_to_hub(hf_path, private=private)
@@ -94,10 +100,12 @@ class BaseRewardTrainer(metaclass=ABCMeta):
         self.model.config.pad_token_id = self.tokenizer.pad_token_id
         if self.use_lora:
             self.lora_config = RewardLoraConfig(**self.lora_params)
-            self.model = LoraModel(model=self.model, lora_config=self.lora_config).model
-            #self.model = prepare_model_for_int8_training(self.model)
-            #self.model = get_peft_model(self.model,self.lora_config)
-        self.model.print_trainable_parameters()
+            self.lora_model =LoraModel(
+                    base_model = self.model,
+                    lora_config = self.lora_config,
+                    output_dir = self.output_dir)
+            self.model = self.lora_model.model
+            self.model.print_trainable_parameters()
 
     def instantiate_reward_trainer(self, data):
         eval_dataset = data.get('validation', None)
