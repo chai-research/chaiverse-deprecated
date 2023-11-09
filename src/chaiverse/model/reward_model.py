@@ -10,6 +10,7 @@ import torch
 from chaiverse import utils
 from chaiverse.training_config import RewardLoraConfig
 from chaiverse.logging_utils import logging_manager
+from chaiverse.model.lora_model import LoraModel
 
 class BaseRewardTrainer(metaclass=ABCMeta):
     _trainer_cls = Trainer
@@ -93,8 +94,9 @@ class BaseRewardTrainer(metaclass=ABCMeta):
         self.model.config.pad_token_id = self.tokenizer.pad_token_id
         if self.use_lora:
             self.lora_config = RewardLoraConfig(**self.lora_params)
-            self.model = prepare_model_for_int8_training(self.model)
-            self.model = get_peft_model(self.model,self.lora_config)
+            self.model = LoraModel(model=self.model, lora_config=self.lora_config).model
+            #self.model = prepare_model_for_int8_training(self.model)
+            #self.model = get_peft_model(self.model,self.lora_config)
         self.model.print_trainable_parameters()
 
     def instantiate_reward_trainer(self, data):

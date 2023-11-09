@@ -7,6 +7,19 @@ from transformers import default_data_collator
 
 from chaiverse.training_config import CausalLMLoraConfig
 
+class LoraModel:
+    def __init__(
+            self,
+            model,
+            lora_config,
+    ):
+        self.lora_config = lora_config
+        self.model = self._load_lora_model(model)
+
+    def _load_lora_model(self,model):
+        self.model = prepare_model_for_int8_training(model)
+        return get_peft_model(model, self.lora_config)
+
 class LoraTrainer:
 
     def __init__(
@@ -54,8 +67,8 @@ class LoraTrainer:
 
     def instantiate_lora_model(self, **kwargs):
         model = self._load_base_model()
-        model = prepare_model_for_int8_training(model)
-        self.model = self._load_lora_model(model)
+        self.lora_config = CausalLMLoraConfig(**self.lora_params)
+        self.model = LoraModel(model=model,lora_config=self.lora_config).model
         self.model.print_trainable_parameters()
 
     def instantiate_lora_trainer(self, data):
@@ -76,11 +89,6 @@ class LoraTrainer:
                 self.model_name,
                 load_in_8bit=self.load_in_8bit,
                 device_map=self.device_map)
-        return model
-
-    def _load_lora_model(self, model):
-        self.lora_config = CausalLMLoraConfig(**self.lora_params)
-        model = get_peft_model(model, self.lora_config)
         return model
 
     @property
