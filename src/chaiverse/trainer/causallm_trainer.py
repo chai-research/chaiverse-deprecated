@@ -55,6 +55,7 @@ class CausalLMTrainer:
         self.model.save_pretrained(save_path)
 
     def merge(self, path=None):
+        self.lora_model.base_model = self._load_base_model(load_in_8bit=False)
         self.model = self.lora_model.merge(path=path)
 
     def push_to_hub(self, hf_path, private=True):
@@ -90,10 +91,11 @@ class CausalLMTrainer:
         else:
             return True
 
-    def _load_base_model(self):
+    def _load_base_model(self,load_in_8bit=None):
+        load_in_8bit = load_in_8bit or self.load_in_8bit
         model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
-                load_in_8bit=self.load_in_8bit,
+                load_in_8bit=load_in_8bit,
                 device_map=self.device_map)
         return model
 
