@@ -20,6 +20,8 @@ class CausalLMTrainer:
             num_train_epochs=2,
             logging_strategy='steps',
             logging_steps=50,
+            evaluation_strategy='no',
+            eval_steps=None,
             device_map='auto',
             use_lora=True,
             lora_params = {
@@ -33,10 +35,13 @@ class CausalLMTrainer:
         self.num_train_epochs = num_train_epochs
         self.logging_strategy = logging_strategy
         self.logging_steps = logging_steps
+        self.evaluation_strategy = evaluation_strategy
+        self.eval_steps = eval_steps
         self.device_map = device_map
         self.load_in_8bit = self._check_cuda_availability()
         self.use_lora = use_lora
         self.lora_params = lora_params
+        self._initiate_training_config()
 
     def trainer_setup(self, data):
         self.instantiate_causallm_model()
@@ -74,6 +79,11 @@ class CausalLMTrainer:
             data_collator=self.data_collator,
             train_dataset=data['train'])
 
+    def update_training_config(self,**kwargs):
+        config = self.training_config.to_dict()
+        config.update(kwargs)
+        self.training_config = TrainingArguments(**config)
+
     def _check_cuda_availability(self):
         if self.device_map == 'cpu' or (not torch.cuda.is_available()):
             return False
@@ -87,9 +97,8 @@ class CausalLMTrainer:
                 device_map=self.device_map)
         return model
 
-    @property
-    def training_config(self):
-        return TrainingArguments(
+    def _initiate_training_config(self):
+        self.training_config = TrainingArguments(
                 output_dir=self.output_dir,
                 auto_find_batch_size=True,
                 learning_rate=self.learning_rate,
@@ -97,5 +106,7 @@ class CausalLMTrainer:
                 logging_dir=f'{self.output_dir}/logs',
                 logging_strategy=self.logging_strategy,
                 logging_steps=self.logging_steps,
+                evaluation_strategy=self.evaluation_strategy,
+                eval_steps=self.eval_steps,
                 save_strategy='no')
 

@@ -66,6 +66,7 @@ class BaseRewardTrainer(metaclass=ABCMeta):
         self.no_cuda = no_cuda
         self.use_lora = use_lora
         self.lora_params = lora_params
+        self._initiate_training_config()
 
     def trainer_setup(self,data):
         data = self._format_data_by_training_task(data)
@@ -117,16 +118,16 @@ class BaseRewardTrainer(metaclass=ABCMeta):
                 eval_dataset=eval_dataset,
                 )
 
-    @abstractmethod
-    def _format_data_by_training_task(self, data):
-        raise NotImplementedError
+    def update_training_config(self,**kwargs):
+        config = self.training_config.to_dict()
+        config.update(kwargs)
+        self.training_config = TrainingArguments(**config)
 
-    @property
-    def training_config(self):
+    def _initiate_training_config(self):
         if self.bf16 and (not torch.cuda.is_available()):
             self.bf16 = False
             print("no GPU detected, set bf16 to False")
-        return TrainingArguments(
+        self.training_config = TrainingArguments(
                 output_dir=self.output_dir,
                 learning_rate=self.learning_rate,
                 num_train_epochs=self.num_train_epochs,
@@ -146,6 +147,10 @@ class BaseRewardTrainer(metaclass=ABCMeta):
                 gradient_accumulation_steps=self.gradient_accumulation_steps,
                 no_cuda=self.no_cuda,
                 )
+
+    @abstractmethod
+    def _format_data_by_training_task(self, data):
+        raise NotImplementedError
 
 
 class RewardRegressionTrainer(BaseRewardTrainer):
