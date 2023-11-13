@@ -75,6 +75,7 @@ def tiny_lora_model(tiny_base_model_id, tmpdir):
     return model
 
 
+
 @pytest.fixture
 @patch("chaiverse.logging_utils.requests.post", Mock())
 def data():
