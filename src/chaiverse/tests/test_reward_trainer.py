@@ -7,7 +7,7 @@ from transformers import AutoModelForSequenceClassification
 
 from chaiverse.dataset import DatasetLoader, RewardDatasetBuilder
 from chaiverse.tokenizer import GPT2Tokenizer
-from chaiverse.model.reward_model import RewardClassificationTrainer
+from chaiverse.trainer.reward_trainer import RewardClassificationTrainer
 from mock import patch, Mock
 
 

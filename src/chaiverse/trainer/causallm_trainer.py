@@ -56,11 +56,11 @@ class CausalLMTrainer:
         self.model.push_to_hub(hf_path, private=private)
 
     def instantiate_causallm_model(self, **kwargs):
-        model = self._load_base_model()
+        self.model = self._load_base_model()
         if self.use_lora:
             self.lora_config = CausalLMLoraConfig(**self.lora_params)
             self.lora_model = LoraModel(
-                base_model=model,
+                base_model=self.model,
                 lora_config=self.lora_config,
                 output_dir = self.output_dir,
                 )

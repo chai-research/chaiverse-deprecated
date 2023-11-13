@@ -8,7 +8,7 @@ import numpy as np
 import torch
 
 from chaiverse import utils
-from chaiverse.training_config import RewardLoraConfig
+from chaiverse.model.training_config import RewardLoraConfig
 from chaiverse.logging_utils import logging_manager
 from chaiverse.model.lora_model import LoraModel
 
