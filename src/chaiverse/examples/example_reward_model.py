@@ -36,7 +36,7 @@ if __name__ == '__main__':
             tokenizer_loader=tokenizer_loader,
             output_dir='./test_reward',
             learning_rate=1e-3,
-            num_train_epochs=4,
+            num_train_epochs=2,
             bf16=True,
             logging_strategy='steps',
             logging_steps=2,
