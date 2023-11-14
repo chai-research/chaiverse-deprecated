@@ -46,7 +46,7 @@ if __name__ == '__main__':
             lora_params=lora_params
             )
 
-    model.update_training_config(per_device_batch_size=32)
+    model.update_training_config(per_device_train_batch_size=32)
 
     model.trainer_setup(data)
     model.fit()
