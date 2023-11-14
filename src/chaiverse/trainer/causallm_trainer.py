@@ -38,7 +38,6 @@ class CausalLMTrainer:
         self.evaluation_strategy = evaluation_strategy
         self.eval_steps = eval_steps
         self.device_map = device_map
-        self.load_in_8bit = self._check_cuda_availability()
         self.use_lora = use_lora
         self.lora_params = lora_params
         self._initiate_training_config()
@@ -91,8 +90,10 @@ class CausalLMTrainer:
         else:
             return True
 
-    def _load_base_model(self,load_in_8bit=None):
-        load_in_8bit = load_in_8bit or self.load_in_8bit
+    def _load_base_model(self,load_in_8bit=True):
+        if load_in_8bit:
+            if not self._check_cuda_availability():
+                load_in_8bit = False
         model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
                 load_in_8bit=load_in_8bit,
