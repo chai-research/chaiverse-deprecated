@@ -22,6 +22,8 @@ class CausalLMTrainer:
             logging_steps=50,
             evaluation_strategy='no',
             eval_steps=None,
+            per_device_batch_size=8,
+            gradient_accumulation_steps=1,
             device_map='auto',
             use_lora=True,
             lora_params = {
@@ -37,6 +39,8 @@ class CausalLMTrainer:
         self.logging_steps = logging_steps
         self.evaluation_strategy = evaluation_strategy
         self.eval_steps = eval_steps
+        self.per_device_batch_size = per_device_batch_size
+        self.gradient_accumulation_steps = gradient_accumulation_steps
         self.device_map = device_map
         self.use_lora = use_lora
         self.lora_params = lora_params
@@ -111,5 +115,8 @@ class CausalLMTrainer:
                 logging_steps=self.logging_steps,
                 evaluation_strategy=self.evaluation_strategy,
                 eval_steps=self.eval_steps,
+                per_device_train_batch_size=self.per_device_batch_size,
+                per_device_eval_batch_size=self.per_device_batch_size,
+                gradient_accumulation_steps=self.gradient_accumulation_steps,
                 save_strategy='no')
 
