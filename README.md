@@ -39,11 +39,11 @@
 
 
 ## Model Training
-Currently we support efficient training with Lora, and reward model training.
+Currently we support efficient training with Lora, for Causallm model and reward model training.
 The sample codes can be found under `src/chaiverse/examples`
 
-### 🦙 Fit a model with Lora
-Nice and easy pipeline with Lora implementation to train a LLaMA7b model and push it to huggingface within hours 🥳
+### 🦙 Fit a causallm model
+Nice and easy pipeline to train a causallm model(e.g. llama) and push it to huggingface within hours 🥳
 
 The [example notebook](https://github.com/chai-research/chaiverse/blob/clean_dev_main/src/chaiverse/examples/example_lora_llama.ipynb) to fit a Llama7b model and push it to huggingface.
 
